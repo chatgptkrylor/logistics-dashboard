@@ -211,7 +211,135 @@ The backend CORS policy in `backend/Program.cs` already allows these frontend or
 
 If you deploy to a different domain, update the allowed origins in `backend/Program.cs`.
 
-## 11. Common Problems And Fixes
+## 11. Setting Up FQDN Access (Domain Names)
+
+FQDN means Fully Qualified Domain Name.
+
+In simple words, this means using clean URLs like `http://logistics.yaaniai.com` instead of raw port-based URLs like `http://localhost:3004`.
+
+This is useful in two common cases:
+
+1. Local development when you want domain-style URLs
+2. Production when real users will open the app through a domain name
+
+### Step 1. Local Development With `/etc/hosts`
+
+This is the easiest way to test domain names on your own machine.
+
+Open `/etc/hosts` with root permission and add these lines:
+
+```text
+127.0.0.1  logistics.yaaniai.com
+127.0.0.1  logistics-api.yaaniai.com
+```
+
+Example command:
+
+```bash
+sudo nano /etc/hosts
+```
+
+After saving the file, these names will point to your local machine.
+
+You can then open:
+
+1. `http://logistics.yaaniai.com:3004`
+2. `http://logistics-api.yaaniai.com:8003`
+
+This does not require public DNS.
+It only works on the machine where you changed `/etc/hosts`.
+
+### Step 2. Production With `nginx`
+
+In production, you usually want `nginx` to listen on port `80` and forward traffic to the frontend and backend services.
+
+Create this file:
+
+```text
+/etc/nginx/sites-available/logistics
+```
+
+Add this configuration:
+
+```nginx
+server {
+    listen 80;
+    server_name logistics.yaaniai.com;
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8003/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3004;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+
+server {
+    listen 80;
+    server_name logistics-api.yaaniai.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8003;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+Then enable the site:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/logistics /etc/nginx/sites-enabled/logistics
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+If `sudo nginx -t` shows an error, fix that error before restarting `nginx`.
+
+### Step 3. Public Access With A Real Domain
+
+If you want other people to access the app from the internet, your domain must point to your server.
+
+You can do that in one of these ways:
+
+1. Point your domain DNS records to the server IP
+2. Use a service such as Cloudflare Tunnel
+
+The `nginx` configuration can stay the same.
+
+### Step 4. Test That It Works
+
+After setup, test both routes.
+
+Frontend domain through backend route:
+
+```bash
+curl http://logistics.yaaniai.com/api/health
+```
+
+Direct backend domain:
+
+```bash
+curl http://logistics-api.yaaniai.com/api/health
+```
+
+Both should return:
+
+```json
+{"status":"ok"}
+```
+
+If these requests work, your domain routing is set up correctly.
+
+## 12. Common Problems And Fixes
 
 ### Problem 1: Port `3004` or `8003` is already in use
 
@@ -253,7 +381,7 @@ Fix:
 2. Check the allowed origins in the CORS policy
 3. Make sure your frontend URL matches one of those allowed origins
 
-## 12. Full Quick Start
+## 13. Full Quick Start
 
 If you want the shortest possible version, follow these steps:
 
@@ -277,7 +405,7 @@ npm run serve
 
 5. Open `http://localhost:3004` in your browser
 
-## 13. Summary
+## 14. Summary
 
 To run this project successfully:
 
