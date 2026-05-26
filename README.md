@@ -253,6 +253,17 @@ It only works on the machine where you changed `/etc/hosts`.
 
 In production, you usually want `nginx` to listen on port `80` and forward traffic to the frontend and backend services.
 
+Important: after `nginx` is set up, users should use port `80` URLs with no port number in the browser.
+
+Use these URLs after `nginx` is working:
+
+1. `http://logistics.yaaniai.com` for the frontend
+2. `http://logistics.yaaniai.com/api/health` for API requests through the frontend domain
+3. `http://logistics-api.yaaniai.com/api/health` for the backend domain directly
+
+Do not use `:3004` or `:8003` in these public URLs.
+Those ports stay internal on the server, and `nginx` proxies traffic for you.
+
 Create this file:
 
 ```text
@@ -304,20 +315,34 @@ sudo systemctl restart nginx
 
 If `sudo nginx -t` shows an error, fix that error before restarting `nginx`.
 
+After this step:
+
+1. The frontend is opened as `http://logistics.yaaniai.com`
+2. Frontend requests to `/api/*` work without any port number because `nginx` proxies them to the backend
+3. The backend is also directly available at `http://logistics-api.yaaniai.com`
+
 ### Step 3. Public Access With A Real Domain
 
 If you want other people to access the app from the internet, your domain must point to your server.
 
-You can do that in one of these ways:
+For the `yaaniai.com` domain, add DNS records for both subdomains:
 
-1. Point your domain DNS records to the server IP
-2. Use a service such as Cloudflare Tunnel
+1. `logistics` -> point it to your server
+2. `logistics-api` -> point it to your server
+
+In practice, that usually means one of these setups:
+
+1. Add `A` records that point to your server's public IP
+2. Add `CNAME` records that point to another hostname you use for that server
+3. If you use Cloudflare Tunnel, add `CNAME` records that point to the tunnel hostname or tunnel ID target provided by Cloudflare
 
 The `nginx` configuration can stay the same.
 
+Without DNS records, `logistics.yaaniai.com` and `logistics-api.yaaniai.com` will not resolve from other machines.
+
 ### Step 4. Test That It Works
 
-After setup, test both routes.
+After `nginx` is set up, test the port `80` URLs with no port numbers.
 
 Frontend domain through backend route:
 
@@ -329,6 +354,12 @@ Direct backend domain:
 
 ```bash
 curl http://logistics-api.yaaniai.com/api/health
+```
+
+You can also open the frontend in a browser at:
+
+```text
+http://logistics.yaaniai.com
 ```
 
 Both should return:
