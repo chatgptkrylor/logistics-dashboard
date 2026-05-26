@@ -51,9 +51,21 @@ Install these tools first:
 
 ## 3. Check That Your Tools Are Installed
 
-Open a terminal in this project folder and run these commands one by one:
+Open a terminal in this project folder and run these commands one by one.
+
+On Linux/macOS:
 
 ```bash
+node --version
+npm --version
+dotnet --version
+```
+
+On Windows:
+
+Use PowerShell or Command Prompt in this project folder and run:
+
+```powershell
 node --version
 npm --version
 dotnet --version
@@ -64,6 +76,8 @@ You should see version numbers printed to the screen.
 If `dotnet --version` does not show an `8.x.x` version, install .NET SDK 8 before continuing.
 
 ## 4. Start The Backend API
+
+On Linux/macOS:
 
 Step 1. Move into the backend folder:
 
@@ -80,6 +94,16 @@ dotnet restore
 Step 3. Start the backend server:
 
 ```bash
+dotnet run
+```
+
+On Windows:
+
+Use PowerShell or Command Prompt and run:
+
+```powershell
+cd backend
+dotnet restore
 dotnet run
 ```
 
@@ -116,9 +140,33 @@ Example:
 http://localhost:8003/api/shipments
 ```
 
+You can also test from the command line.
+
+On Linux/macOS:
+
+```bash
+curl http://localhost:8003/api/health
+```
+
+On Windows:
+
+Use either your browser, `curl`, or PowerShell:
+
+```powershell
+curl http://localhost:8003/api/health
+```
+
+or:
+
+```powershell
+Invoke-WebRequest http://localhost:8003/api/health
+```
+
 ## 6. Start The Frontend
 
 Open a second terminal.
+
+On Linux/macOS:
 
 Step 1. Move into the frontend folder:
 
@@ -135,6 +183,16 @@ npm install
 Step 3. Start the Vue development server:
 
 ```bash
+npm run serve
+```
+
+On Windows:
+
+Use PowerShell or Command Prompt and run:
+
+```powershell
+cd frontend
+npm install
 npm run serve
 ```
 
@@ -155,6 +213,14 @@ http://localhost:3004
 ```
 
 This is the main development URL for the dashboard.
+
+On Linux/macOS:
+
+Open `http://localhost:3004` in any browser.
+
+On Windows:
+
+Open `http://localhost:3004` in any browser.
 
 Development URLs:
 
@@ -211,6 +277,18 @@ The backend CORS policy in `backend/Program.cs` already allows these frontend or
 
 If you deploy to a different domain, update the allowed origins in `backend/Program.cs`.
 
+On Linux/macOS:
+
+Use `nginx` as shown below.
+
+On Windows:
+
+You can use one of these options:
+
+1. Run `nginx` for Windows with similar reverse-proxy rules
+2. Use IIS as the reverse proxy
+3. Skip the reverse proxy for local testing and use `http://localhost:3004` and `http://localhost:8003` directly
+
 ## 11. Setting Up FQDN Access (Domain Names)
 
 FQDN means Fully Qualified Domain Name.
@@ -222,9 +300,11 @@ This is useful in two common cases:
 1. Local development when you want domain-style URLs
 2. Production when real users will open the app through a domain name
 
-### Step 1. Local Development With `/etc/hosts`
+### Step 1. Local Development With Hosts File
 
 This is the easiest way to test domain names on your own machine.
+
+On Linux/macOS:
 
 Open `/etc/hosts` with root permission and add these lines:
 
@@ -239,6 +319,21 @@ Example command:
 sudo nano /etc/hosts
 ```
 
+On Windows:
+
+Open this file as Administrator:
+
+```text
+C:\Windows\System32\drivers\etc\hosts
+```
+
+Add these same lines:
+
+```text
+127.0.0.1  logistics.yaaniai.com
+127.0.0.1  logistics-api.yaaniai.com
+```
+
 After saving the file, these names will point to your local machine.
 
 You can then open:
@@ -249,7 +344,7 @@ You can then open:
 This does not require public DNS.
 It only works on the machine where you changed `/etc/hosts`.
 
-### Step 2. Production With `nginx`
+### Step 2. Production Reverse Proxy Setup
 
 In production, you usually want `nginx` to listen on port `80` and forward traffic to the frontend and backend services.
 
@@ -263,6 +358,8 @@ Use these URLs after `nginx` is working:
 
 Do not use `:3004` or `:8003` in these public URLs.
 Those ports stay internal on the server, and `nginx` proxies traffic for you.
+
+On Linux/macOS:
 
 Create this file:
 
@@ -315,6 +412,20 @@ sudo systemctl restart nginx
 
 If `sudo nginx -t` shows an error, fix that error before restarting `nginx`.
 
+On Windows:
+
+You have three common choices:
+
+1. Use `nginx` for Windows and adapt the same proxy rules in its config file
+2. Use IIS with URL Rewrite and reverse proxy rules
+3. Skip the reverse proxy and use `http://localhost:3004` and `http://localhost:8003` directly during development
+
+If you use a reverse proxy on Windows, keep the same routing idea:
+
+1. Frontend domain -> port `3004`
+2. `/api/*` requests -> port `8003`
+3. Backend API domain -> port `8003`
+
 After this step:
 
 1. The frontend is opened as `http://logistics.yaaniai.com`
@@ -346,6 +457,8 @@ After `nginx` is set up, test the port `80` URLs with no port numbers.
 
 Frontend domain through backend route:
 
+On Linux/macOS:
+
 ```bash
 curl http://logistics.yaaniai.com/api/health
 ```
@@ -355,6 +468,15 @@ Direct backend domain:
 ```bash
 curl http://logistics-api.yaaniai.com/api/health
 ```
+
+On Windows:
+
+```powershell
+curl http://logistics.yaaniai.com/api/health
+curl http://logistics-api.yaaniai.com/api/health
+```
+
+You can also test both URLs in a browser.
 
 You can also open the frontend in a browser at:
 
@@ -387,6 +509,15 @@ Backend port is set in:
 
 1. `backend/Program.cs`
 
+On Windows, find and stop the process with:
+
+```powershell
+netstat -ano | findstr :3004
+taskkill /PID <pid> /F
+```
+
+Use `:8003` instead of `:3004` if the backend port is the one in use.
+
 ### Problem 2: `npm install` fails
 
 Fix:
@@ -394,6 +525,9 @@ Fix:
 1. Delete `frontend/node_modules`
 2. Delete `frontend/package-lock.json`
 3. Run `npm install` again
+
+On Windows, this same fix applies.
+If needed, close all terminals and editors first, then delete `node_modules` and `package-lock.json`, and run `npm install` again.
 
 ### Problem 3: `dotnet restore` fails
 
@@ -404,6 +538,8 @@ Fix:
 3. Install or upgrade .NET if needed
 4. Run `dotnet restore` again
 
+On Windows, run the same commands in PowerShell or Command Prompt.
+
 ### Problem 4: Browser shows a CORS error
 
 Fix:
@@ -412,9 +548,23 @@ Fix:
 2. Check the allowed origins in the CORS policy
 3. Make sure your frontend URL matches one of those allowed origins
 
+### Problem 5: PowerShell blocks script execution
+
+Fix:
+
+Run PowerShell as your user and execute:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+
+Then open a new PowerShell window and try again.
+
 ## 13. Full Quick Start
 
 If you want the shortest possible version, follow these steps:
+
+On Linux/macOS:
 
 1. Open terminal number 1
 2. Run:
@@ -429,6 +579,28 @@ dotnet run
 4. Run:
 
 ```bash
+cd frontend
+npm install
+npm run serve
+```
+
+5. Open `http://localhost:3004` in your browser
+
+On Windows:
+
+1. Open PowerShell or Command Prompt window number 1
+2. Run:
+
+```powershell
+cd backend
+dotnet restore
+dotnet run
+```
+
+3. Open PowerShell or Command Prompt window number 2
+4. Run:
+
+```powershell
 cd frontend
 npm install
 npm run serve
